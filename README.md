@@ -1,5 +1,5 @@
 # SphereCon
-This tool calculates a measure for relative solvent accessible area for single residues or whole amino acid chains.
+This tool calculates an approximate values for relative solvent accessible area for single residues or whole amino acid chains in a PDB file. The method is based on calculating or estimating the number of atoms around a given amino acid residue that are located within a sphere with a cut-out cone. 
 ## Dependencies
 * python 3
 * numpy
@@ -27,3 +27,5 @@ spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r res
 spherecon can be simply imported by
 import spherecon
 (just add the file to your PYTHONPATH)
+## Cite
+Gress A, Kalinina OV (2019) SphereCon - A method for precise estimation of residue relative solvent accessible area from limited structural information. Submitted.
