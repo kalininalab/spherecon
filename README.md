@@ -22,7 +22,7 @@ spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r res
 
 --ca:   C-alpha only version of SphereCon. Needs only coordinates of the C-alpha atoms and their amino acid type.
 
---bb:   Backbone only version of SphereCon. Needs only coordinates of the C alpha atoms.
+--bb:   Backbone only version of SphereCon. Needs only coordinates of the C-alpha atoms without specifying their type.
 ### Using as library
 spherecon can be simply imported by
 import spherecon
