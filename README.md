@@ -20,7 +20,7 @@ spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r res
         The residue identifiers denote as the residues identifiers of the ATOM records in the PDB file.
         Examples: 234,78,368 | 17 | 34,35,36,37
 
---ca:   C alpha version of SphereCon. Needs only coordinates of the C alpha atoms and their amino acid type.
+--ca:   C-alpha only version of SphereCon. Needs only coordinates of the C-alpha atoms and their amino acid type.
 
 --bb:   Backbone only version of SphereCon. Needs only coordinates of the C alpha atoms.
 ### Using as library
