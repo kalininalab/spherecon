@@ -95,34 +95,6 @@ threshs = {'CYS' : 7.0, 'SEC': 7.0, 'GLN' : 7.25, 'ASP' : 6.75, 'ASX': 6.75, 'SE
 
 angle_threshs = {'CYS' : -0.85, 'SEC' : -0.85, 'GLN' : -0.95, 'ASP' : -0.95, 'ASX' : -0.95, 'SER' : -0.9, 'VAL' : -0.85, 'LYS' : -0.9, 'ASN' : -0.95, 'PRO' : -0.85, 'THR' : -0.85, 'PHE' : -0.85, 'ALA' : -0.85, 'HIS' : -0.8, 'GLY' : -1.0, 'ILE' : -0.9, 'LEU' : -0.9, 'ARG' : -0.95, 'TRP' : -0.95, 'GLU' : -0.95, 'GLX' : -0.95, 'TYR' : -0.85, 'MET' : -1.0, 'UNK': unknown_angle_thresh}
 
-residue_max_acc = { 
-# Miller max acc: Miller et al. 1987 http://dx.doi.org/10.1016/0022-2836(87)90038-6 
-# Wilke: Tien et al. 2013 http://dx.doi.org/10.1371/journal.pone.0080635 
-# Sander: Sander & Rost 1994 http://dx.doi.org/10.1002/prot.340200303 
-    'Miller': { 
-        'ALA': 113.0, 'ARG': 241.0, 'ASN': 158.0, 'ASP': 151.0, 
-        'CYS': 140.0, 'GLN': 189.0, 'GLU': 183.0, 'GLY': 85.0, 
-        'HIS': 194.0, 'ILE': 182.0, 'LEU': 180.0, 'LYS': 211.0, 
-        'MET': 204.0, 'PHE': 218.0, 'PRO': 143.0, 'SER': 122.0, 
-        'THR': 146.0, 'TRP': 259.0, 'TYR': 229.0, 'VAL': 160.0 
-    }, 
-    'Wilke': { 
-        'ALA': 129.0, 'ARG': 274.0, 'ASN': 195.0, 'ASP': 193.0, 
-        'CYS': 167.0, 'GLN': 225.0, 'GLU': 223.0, 'GLY': 104.0, 
-        'HIS': 224.0, 'ILE': 197.0, 'LEU': 201.0, 'LYS': 236.0, 
-        'MET': 224.0, 'PHE': 240.0, 'PRO': 159.0, 'SER': 155.0, 
-        'THR': 172.0, 'TRP': 285.0, 'TYR': 263.0, 'VAL': 174.0 
-    }, 
-    'Sander': { 
-        'ALA': 106.0, 'ARG': 248.0, 'ASN': 157.0, 'ASP': 163.0, 
-        'CYS': 135.0, 'GLN': 198.0, 'GLU': 194.0, 'GLY': 84.0, 
-        'HIS': 184.0, 'ILE': 169.0, 'LEU': 164.0, 'LYS': 205.0, 
-        'MET': 188.0, 'PHE': 197.0, 'PRO': 136.0, 'SER': 130.0, 
-        'THR': 142.0, 'TRP': 227.0, 'TYR': 222.0, 'VAL': 142.0,
-        'SEC': 135.0 
-    } 
-} 
-
 def calcVol(r,cos):
     vol = (2.0/3.0)*math.pi*(r**3.0)*(1.0-cos)
     return vol
