@@ -6,23 +6,27 @@ This tool calculates an approximate values for relative solvent accessible area 
 * biopython
 ## Instructions
 ### Usage
-spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r residues] [--ca] [--bb]
+spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r residues] [--ca] [--bb] [--dm]
 
 -i:     Path to an input file in PDB (Protein Data Bank) file format.
 
 -o:     Path to the output file produced as tab separated text file.
         Default: *InputFile*_spherecon.tsv
 
--c:     Chain identifier of the amino acid chain, which should be analysed denoted as the chain identifiers of the ATOM records in the PDB file.
+-c:     Chain identifier of the amino acid chain, or a list of Chain identifier separated by a ',', which should be analysed denoted as the chain identifiers of the ATOM records in the PDB file.
         Default: The first chain found in the input file
+        Examples: A | A,B | C,B,z,2
 
 -r:     List of residue identifiers for all residues for which the SphereCon value should be computed. If not given, the SphereCon values for all residues are computed.
         The residue identifiers denote as the residues identifiers of the ATOM records in the PDB file.
         Examples: 234,78,368 | 17 | 34,35,36,37
 
---ca:   C-alpha only version of SphereCon. Needs only coordinates of the C-alpha atoms and their amino acid type.
+--ca:   C alpha version of SphereCon. Needs only coordinates of the C alpha atoms and their amino acid type.
 
---bb:   Backbone only version of SphereCon. Needs only coordinates of the C-alpha atoms without specifying their type.
+--bb:   Backbone only version of SphereCon. Needs only coordinates of the C alpha atoms.
+
+--dm:   Distance matrix version of SphereCon. Takes a distance matrix as input instead of a PDB file.
+
 ### Using as library
 spherecon can be simply imported by
 import spherecon
