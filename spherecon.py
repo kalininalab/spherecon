@@ -857,7 +857,7 @@ This tool calculates a measure for relative solvent accessible area for single r
 Usage:
 spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r residues] [--ca] [--bb] [--dm]
 
--i:\tPath to an input file in PDB (Protein Data Bank) file format.
+-i:\tPath to an input file in PDB (Protein Data Bank) file format or distance matrix file in case of --dm.
 
 -o:\tPath to the output file produced as tab separated text file.
 \tDefault: *InputFile*_spherecon.tsv
@@ -875,7 +875,17 @@ spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r res
 --bb:\tBackbone only version of SphereCon. Needs only coordinates of the C alpha atoms.
 
 --dm:\tDistance matrix version of SphereCon. Takes a distance matrix as input instead of a PDB file.
-
+\tFile for distance matrix has to be in the following format:
+\t\tSEQ [amino acid sequence]
+\t\t[residue nr 1] [residue nr 2] [distance value in angstrom]
+\t\t...
+\tExample:
+\t\tSEQ TGLRWGGDGIVQIVANNAIVGGWNSTDIFTEAGKHITSN
+\t\t4 9 12.641
+\t\t5 8 10.656
+\t\t5 9 12.616
+\t\t5 10 13.342
+\t\t5 37 11.964
 """
     if len(argv) == 0:
         print(helptext)
