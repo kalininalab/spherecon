@@ -113,8 +113,9 @@ def calcVol(r,cos):
     vol = (2.0/3.0)*math.pi*(r**3.0)*(1.0-cos)
     return vol
 
-def sissCorrectionVol(siss,r,cos):
-    v = calcVol(r,cos)
+def sissCorrectionVol(siss,r,cos,target_rad):
+    v = calcVol(r,cos) - calcVol(target_rad,cos)
+    #print(r,cos,target_rad,v)
     return (v-siss)/v
 
 def parsePDB(input_file,chains,c_alpha,target_atom='CA',page=None):
@@ -340,7 +341,7 @@ def parseDM(input_file,add_neighbors=False):
     sparsity = min(0.9,round(sparsity,1))
     return dist_matrix,res_name_map,seq,sparsity
 
-def calcDistMatrix(coordinate_map,centroid_map,target_residues,c_alpha):
+def calcDistMatrix(coordinate_map,centroid_map,target_residues,c_alpha,atom_mode = False):
     dist_matrix = {}
     if c_alpha:
         for chain in centroid_map:
@@ -354,7 +355,7 @@ def calcDistMatrix(coordinate_map,centroid_map,target_residues,c_alpha):
                             d = math.sqrt(diff[0]**2.0+diff[1]**2.0+diff[2]**2.0)
                             dist_matrix[(chain,res_1,chain2,res_2)] = d
                             dist_matrix[(chain2,res_2,chain,res_1)] = d
-    else:
+    elif not atom_mode:
         for chain in target_residues:
             for res_1 in target_residues[chain]:
                 if not res_1 in centroid_map[chain]:
@@ -375,7 +376,28 @@ def calcDistMatrix(coordinate_map,centroid_map,target_residues,c_alpha):
                             if d - 10.0 > thresh:
                                 break
 
-                        dist_matrix[(chain,res_1)][(chain2,res_2)][atom] = (d,atomname,x,y,z)
+                            dist_matrix[(chain,res_1)][(chain2,res_2)][atom] = (d,atomname,x,y,z)
+    else:
+        for chain in target_residues:
+            for res_1 in target_residues[chain]:
+
+                res_name = coordinate_map[chain][res_1][0]
+                atomlist_1 = coordinate_map[chain][res_1][1]
+                thresh = threshs[res_name]
+                dist_matrix[(chain,res_1)] = {}
+                for chain2 in target_residues:
+                    for res_2 in coordinate_map[chain2]:
+                        dist_matrix[(chain,res_1)][(chain2,res_2)] = {}
+                        atomlist_2 = coordinate_map[chain2][res_2][1]
+                        for atom in atomlist_1:
+                            dist_matrix[(chain,res_1)][(chain2,res_2)][atom] = {}
+                            for atom2 in atomlist_2:
+                                (atomname1,x1,y1,z1) = atomlist_1[atom]
+                                (atomname2,x2,y2,z2) = atomlist_2[atom2]
+                                diff = numpy.array([x1,y1,z1]) - numpy.array([x2,y2,z2])
+                                d = math.sqrt(diff[0]**2.0+diff[1]**2.0+diff[2]**2.0)
+
+                                dist_matrix[(chain,res_1)][(chain2,res_2)][atom][atom2] = (d,atomname2,x2,y2,z2)
     return dist_matrix
 
 def sphere_intersection(R,r,d):
@@ -390,6 +412,7 @@ def sphere_intersection(R,r,d):
     sum1 = (R+r-d)**2
     sum2 = (d**2.0+2.0*d*r-3.0*r**2.0+2.0*d*R+6.0*r*R-3.0*R**2.0)
     si = math.pi*sum1*sum2/(12.0*d)
+    #print('si',R,r,d,si)
     return si
 
 def createRotMatrix(axis,cos):
@@ -564,7 +587,7 @@ def getCentroid(atomlist):
             centroid = None
     return centroid
 
-def produceOutput(siss_map,coordinate_map,output_file,res_name_map):
+def produceOutput(siss_map,coordinate_map,output_file,res_name_map,atom_mode=False):
     """
     Input:
     siss_map: {String:float} ; 
@@ -581,8 +604,14 @@ def produceOutput(siss_map,coordinate_map,output_file,res_name_map):
                 res_name = coordinate_map[chain][res][0]
             else:
                 res_name = res_name_map[chain][res]
-            siss = siss_map[chain][res]
-            lines.append("%s %s %s\t%s\n" % (res,chain,res_name,str(siss)))
+            if not atom_mode:
+                siss = siss_map[chain][res]
+                lines.append("%s %s %s\t%s\n" % (res,chain,res_name,str(siss)))
+            else:
+                for atom in siss_map[chain][res]:
+                    
+                    siss = siss_map[chain][res][atom]
+                    lines.append("%s %s %s %s\t%s\n" % (atom,res,chain,res_name,str(siss)))
 
     lines = sorted(lines,key=lambda x:int(x.split()[0]))
 
@@ -592,7 +621,7 @@ def produceOutput(siss_map,coordinate_map,output_file,res_name_map):
     f.write("".join(lines))
     f.close()
 
-def calculateSiss(coordinate_map,centroid_map,dist_matrix,target_residues,c_alpha,manu_thresh=None,manu_angle_thresh=None,double_unknown_mode=False,manu_parameters=None,unknown_parameters=None,dist_matrix_only=False,res_name_map=None,sparsity=None):
+def calculateSiss(coordinate_map,centroid_map,dist_matrix,target_residues,c_alpha,atom_mode=False,manu_thresh=None,manu_angle_thresh=None,double_unknown_mode=False,manu_parameters=None,unknown_parameters=None,dist_matrix_only=False,res_name_map=None,sparsity=None):
     global threshs
     global angle_threshs
     global threshs_alpha
@@ -683,9 +712,12 @@ def calculateSiss(coordinate_map,centroid_map,dist_matrix,target_residues,c_alph
                             else:
                                 siss += sphere_intersection(thresh,rad,d)
 
-                siss = sissCorrectionVol(siss,thresh,angle_thresh)
+                rad = radii_map[res_name]
+                if double_unknown_mode:
+                    rad = unknown_rad
+                siss = sissCorrectionVol(siss,thresh,angle_thresh,rad)
                 siss_map[chain][res] = siss
-    else:
+    elif not atom_mode:
         for chain in target_residues:
             siss_map[chain] = {}
             for res in target_residues[chain]:
@@ -727,6 +759,7 @@ def calculateSiss(coordinate_map,centroid_map,dist_matrix,target_residues,c_alph
                 error_flag = False
                 for chain2,res_2 in dist_matrix[(chain,res)]:
                     for atom in dist_matrix[(chain,res)][(chain2,res_2)]:
+                        
                         (d,atomname,x,y,z) = dist_matrix[(chain,res)][(chain2,res_2)][atom]
                         if d - vdw_radius[atomname[0]] <= thresh:
                             if angle_thresh > -1.0:
@@ -764,8 +797,37 @@ def calculateSiss(coordinate_map,centroid_map,dist_matrix,target_residues,c_alph
                                 #If the full sphere is taken, there is no need for calculating the angle
                                 siss += sphere_intersection(thresh,vdw_radius[atomname[0]],d)
 
-                siss = sissCorrectionVol(siss,thresh,angle_thresh)
+                        #print(res_2,atomname,d,angle,siss)
+                #print('\n')
+                siss = sissCorrectionVol(siss,thresh,angle_thresh,radii_map[res_name])
+                #print(siss,'\n')
                 siss_map[chain][res] = siss
+
+    else:
+        for chain in target_residues:
+            siss_map[chain] = {}
+            for res in target_residues[chain]:
+                siss_map[chain][res] = {}
+                if not res in coordinate_map[chain]:
+                    continue
+                res_name = coordinate_map[chain][res][0]
+                if manu_thresh == None:
+                    thresh = threshs[res_name]
+                else:
+                    thresh = manu_thresh
+
+                for chain2,res_2 in dist_matrix[(chain,res)]:
+                    for atom1 in dist_matrix[(chain,res)][(chain2,res_2)]:
+                        siss = 0.0
+                        for atom2 in dist_matrix[(chain,res)][(chain2,res_2)][atom1]:
+                            (d,atomname2,x2,y2,z2) = dist_matrix[(chain,res)][(chain2,res_2)][atom1][atom2]
+                            
+                            if d - vdw_radius[atomname2[0]] <= thresh:
+                                #If the full sphere is taken, there is no need for calculating the angle
+                                siss += sphere_intersection(thresh,vdw_radius[atomname2[0]],d)
+
+                        siss = sissCorrectionVol(siss,thresh,-1.0)
+                        siss_map[chain][res][atom1] = siss
 
     return siss_map
 
@@ -803,7 +865,7 @@ def calcAASiss(coordinate_map,target_residues,manu_thresh=None):
 
     return siss_map
 
-def siss(input_file=None,output_file=None,target_residues=None,chains=None,c_alpha=False,double_unknown_mode=False,dist_matrix_only=False,dist_matrix=None,res_name_map=None):
+def siss(input_file=None,output_file=None,target_residues=None,chains=None,atom_mode=False,c_alpha=False,double_unknown_mode=False,dist_matrix_only=False,dist_matrix=None,res_name_map=None):
     
     cwd = os.getcwd()
     if output_file == None:
@@ -818,7 +880,6 @@ def siss(input_file=None,output_file=None,target_residues=None,chains=None,c_alp
         else:
             coordinate_map,protein_centroid = parsePDB(input_file,chains,c_alpha)
 
-
         if target_residues == None:
             target_residues = {}
             for chain in coordinate_map:
@@ -826,7 +887,7 @@ def siss(input_file=None,output_file=None,target_residues=None,chains=None,c_alp
 
         centroid_map = calcCentroidMap(coordinate_map,target_residues,c_alpha,double_unknown_mode=double_unknown_mode)
 
-        dist_matrix = calcDistMatrix(coordinate_map,centroid_map,target_residues,c_alpha)
+        dist_matrix = calcDistMatrix(coordinate_map,centroid_map,target_residues,c_alpha,atom_mode=atom_mode)
         sparsity = None
     else:
         if dist_matrix == None:
@@ -843,9 +904,9 @@ def siss(input_file=None,output_file=None,target_residues=None,chains=None,c_alp
         if target_residues == None:
             target_residues = {'A':list(res_name_map.keys())}
 
-    siss_map = calculateSiss(coordinate_map,centroid_map,dist_matrix,target_residues,c_alpha,double_unknown_mode=double_unknown_mode,dist_matrix_only=dist_matrix_only,res_name_map=res_name_map,sparsity=sparsity)
+    siss_map = calculateSiss(coordinate_map,centroid_map,dist_matrix,target_residues,c_alpha,atom_mode=atom_mode,double_unknown_mode=double_unknown_mode,dist_matrix_only=dist_matrix_only,res_name_map=res_name_map,sparsity=sparsity)
     
-    produceOutput(siss_map,coordinate_map,output_file,res_name_map)
+    produceOutput(siss_map,coordinate_map,output_file,res_name_map,atom_mode=atom_mode)
     
 if __name__ == "__main__":
     
@@ -897,11 +958,12 @@ spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r res
     chains = None
     c_alpha = False
     backbone = False
+    atom_mode = False
 
     dist_matrix_only = False
 
     try:
-        opts,args = getopt.getopt(argv,"hr:o:i:c:",['ca','bb','dm'])
+        opts,args = getopt.getopt(argv,"ahr:o:i:c:",['ca','bb','dm'])
     except getopt.GetoptError:
         print("spherecon.py -h")
         sys.exit(2)
@@ -909,6 +971,8 @@ spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r res
         if opt == '-h':
             print(helptext)
             sys.exit()
+        elif opt == '-a':
+            atom_mode = True
         elif opt == "-i":
             input_file = arg
         elif opt == '-o':
@@ -927,6 +991,5 @@ spherecon.py -i /Path/To/Input/File [-o /Path/To/Output/File] [-c chain] [-r res
             dist_matrix_only = True
             c_alpha = True
 
-
-    siss(input_file=input_file,output_file=output_file,target_residues=target_residues,chains=chains,c_alpha=c_alpha,double_unknown_mode=backbone,dist_matrix_only=dist_matrix_only,dist_matrix=None,res_name_map=None)
+    siss(input_file=input_file,output_file=output_file,target_residues=target_residues,chains=chains,atom_mode=atom_mode,c_alpha=c_alpha,double_unknown_mode=backbone,dist_matrix_only=dist_matrix_only,dist_matrix=None,res_name_map=None)
 
